@@ -1,14 +1,14 @@
 terraform {
-    required_providers {
-        aws = {
-            source = "hashicorp/aws"
-            version = "~> 4.16"
-        }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.16"
     }
+  }
 }
 
 provider "aws" {
-    region = "us-west-2"
+  region = "us-west-2"
 }
 
 # This will create a VPC 
@@ -24,46 +24,46 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "private" {
-    vpc_id = aws_vpc.main.id
-    cidr_block = "10.0.0.0/25"
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.0.0/25"
 
-    tags = {
-        Name = "private-subnet"
-    }
+  tags = {
+    Name = "private-subnet"
+  }
 }
 
 resource "aws_subnet" "public" {
-    vpc_id = aws_vpc.main.id
-    cidr_block = "10.0.0.128/25"
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.0.128/25"
 
-    tags = {
-        Name = "public-subnet"
-    }
+  tags = {
+    Name = "public-subnet"
+  }
 }
 resource "aws_internet_gateway" "gateway" {
-    vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.main.id
 
-    tags = {
-        Name = "main_gateway"
-    }
+  tags = {
+    Name = "main_gateway"
+  }
 }
 
 resource "aws_route_table" "route_table" {
-    vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.main.id
 
-    route {
-        cidr_block = "0.0.0.0/0"
-        gateway_id =  aws_internet_gateway.gateway.id
-    }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gateway.id
+  }
 
-    tags = {
-        Name = "main_route_table"
-    }
+  tags = {
+    Name = "main_route_table"
+  }
 }
 
 resource "aws_route_table_association" "public_association" {
-    subnet_id = aws_subnet.public.id
-    route_table_id = aws_route_table.route_table.id
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.route_table.id
 }
 
 
@@ -140,35 +140,35 @@ resource "aws_network_acl" "main" {
 }
 
 resource "aws_network_acl_association" "NACL_association" {
-    subnet_id = aws_subnet.public.id
-    network_acl_id = aws_network_acl.main.id
+  subnet_id      = aws_subnet.public.id
+  network_acl_id = aws_network_acl.main.id
 
 }
 
 resource "aws_instance" "public_ec2" {
-    ami = "ami-04e914639d0cca79a"
-    instance_type = "t2.micro"
+  ami           = "ami-04e914639d0cca79a"
+  instance_type = "t2.micro"
 
-    subnet_id = aws_subnet.public.id
-    security_groups = [aws_security_group.web.id]
+  subnet_id       = aws_subnet.public.id
+  security_groups = [aws_security_group.web.id]
 
-        tags = {
-        Name = "Public"
-    }
+  tags = {
+    Name = "Public"
+  }
 }
 
 
 
 resource "aws_instance" "private_ec2" {
-    ami = "ami-04e914639d0cca79a"
-    instance_type = "t2.micro"
+  ami           = "ami-04e914639d0cca79a"
+  instance_type = "t2.micro"
 
-    subnet_id = aws_subnet.private.id
-    security_groups = [aws_security_group.private_group.id]
+  subnet_id       = aws_subnet.private.id
+  security_groups = [aws_security_group.private_group.id]
 
-    tags = {
-        Name = "Private"
-    }
+  tags = {
+    Name = "Private"
+  }
 }
 
 
