@@ -153,6 +153,162 @@ Refers to the state file for infrastructure tracking. Sensitive data should be s
 
 Open `graph.svg` in a browser to see the visualization.
 
+Here's your content converted into a GitHub README format with appropriate Markdown syntax:
+
+```markdown
+# Terraform Documentation
+
+## Lifecycle Rules
+
+There are certain scenarios where we don't want Terraform to delete the infrastructure when we apply changes. In these cases, we can use lifecycle rules:
+
+```hcl
+lifecycle {
+    create_before_destroy = true
+}
+
+lifecycle {
+    prevent_destroy = true
+}
+```
+
+### Key Lifecycle Arguments
+
+- **`create_before_destroy`**: Ensures that a new resource is created before the old one is destroyed.
+- **`prevent_destroy`**: Prevents the resource from being destroyed.
+- **`ignore_changes`**: Specifies attributes to ignore when determining if a resource needs updating.
+
+---
+
+## Terraform Data Sources
+
+Data sources are used to read a text file or fetch content from an existing resource. They are declared using the `data` block.
+
+Terraform data sources allow you to fetch data from external sources or existing resources in your infrastructure, which can be used to configure other resources.
+
+### Step 1: Define the Data Source
+
+Use a data source to fetch the VPC ID of an existing VPC.
+
+```hcl
+provider "aws" {
+  region = "us-west-2"
+}
+
+data "aws_vpc" "selected" {
+  filter {
+    name   = "tag:Name"
+    values = ["my-vpc"]
+  }
+}
+```
+
+### Step 2: Use the Data Source in a Resource
+
+Next, create a subnet within the fetched VPC using the data source.
+
+```hcl
+resource "aws_subnet" "example" {
+  vpc_id            = data.aws_vpc.selected.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-west-2a"
+
+  tags = {
+    Name = "example-subnet"
+  }
+}
+```
+
+---
+
+## Terraform Meta Arguments
+
+### Key Meta Arguments
+
+1. **`count`**
+   - This creates the resource with the specified number.
+
+   ```hcl
+   resource "local_file" "pet" {
+       filename = var.filename[count.index] # Set the file name using index in the list below
+       count    = length(var.filename)
+   }
+
+   variable "filename" {
+       default = [
+           "root/pet.txt",
+           "root/dog.txt",
+           "root/duck.txt"
+       ]
+   }
+   ```
+
+   **Note:** The problem with `count` is that it will recreate the resources if variables are modified, which is not ideal. That's why we need `for_each`.
+
+2. **`for_each`**
+   - More usable than `count`.
+
+   ```hcl
+   resource "local_file" "pet" {
+       filename = each.value
+       for_each = toset(var.filename)
+   }
+
+   variable "filename" {
+       type    = set(string)  # Important to ensure uniqueness
+       default = [
+           "root/pet.txt",
+           "root/dog.txt",
+           "root/duck.txt"
+       ]
+   }
+   ```
+
+3. **`depends_on`**
+4. **`provider`**
+5. **`lifecycle`**
+
+---
+
+## Version Constraints
+
+Provider plugins vary from one to another. The provider documentation in the registry specifies the version, starting with `terraform`.
+
+```hcl
+terraform {  # Remember the constraint is set to terraform here
+    required_providers {
+        local = {
+            source  = "hashicorp/local"
+            version = "1.4.0"
+        }
+    }
+}
+```
+
+---
+
+## Remote State
+
+- Understanding local state files vs remote state files is crucial.
+- It is not advisable to store state files in a repository. Why? A developer writes a Terraform script in an S3 bucket and proceeds to apply it, which creates a state file locally and in the repo.
+- State files store sensitive information, such as IP addresses, databases, and passwords.
+
+<aside>
+💡 **State locking** is a very important feature, and Git does not store state locking. 
+Store it in AWS S3, Consul, GCP Storage, or Terraform Cloud.
+</aside>
+
+---
+
+## Remote State Locking
+
+To enable remote state locking, you need an S3 bucket and state locking.
+```
+
+### Summary
+
+This README provides a structured overview of key Terraform concepts, including lifecycle rules, data sources, meta arguments, version constraints, and remote state management. Feel free to modify any part to better fit your project's specific needs!
+
 ---
 
 This guide provides a quick overview of Terraform basics, including configurations, variables, resource attributes, dependencies, state management, and key commands. For more detailed information, refer to the [Terraform documentation](https://www.terraform.io/docs).
